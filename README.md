@@ -3,5 +3,5 @@ Dash project fro Data Tidying and Reporting
 
 ## Group members
 
-- [Arturo Prieto Tirado](https://github.com/apt345)
+- [Danyu Zhang](https://github.com/danyuz)
 - [Daniel Alonso](https://github.com/dreth)

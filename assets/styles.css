@@ -1,3 +1,15 @@
 hr {
     border: 1px solid white;
 }
+
+#mainTitle {
+    color: coral;
+}
+
+#sideBarTitle {
+    color:rgb(203, 160, 223);
+}
+
+.sideBarDatasetTitles {
+    color: rgb(199, 140, 148);
+}

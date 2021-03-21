@@ -96,13 +96,18 @@ content = html.Div(id="page-content", style=CONTENT_STYLE)
 # app general layout
 app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
 
+# %% PLOTTING FUNCTIONS
+# functions used to plot each element in each tab of the app
+
+
+
+
 # %% PAGE CONTENT
-
-
+# website content layout and text
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
 def render_page_content(pathname):
 
-    # root directory / homepage
+    #### HOMEPAGE
     if pathname == '/':
         return dbc.Jumbotron([
             html.H2("Welcome to our Dash App!", id='mainTitle'),
@@ -119,30 +124,77 @@ def render_page_content(pathname):
             html.P("Feel free to navigate the page and play around with the menus!")
         ])
 
-    # DEVELOPMENT DATASET PAGES
+    #### DEVELOPMENT DATASET PAGES
+    # development dataset introduction
     elif pathname == "/development-dataset":
-        return html.Div([
-            html.H3(
-                "A set of visualizations for different worldwide demographic/development metrics")])
+        return dbc.Jumbotron([
+            html.H3("A set of visualizations for different worldwide demographic/development metrics"),
+            html.P([
+                "Obtained form the ",
+                html.A("World bank Databank", href="https://databank.worldbank.org/home.aspx"),
+                "specifically the ",
+                html.A("World Development Indicators database", href="https://databank.worldbank.org/source/world-development-indicators"),
+                "This is the 'primary World Bank collection of development indicators' as stated on the database description. It has lots of economic, education, energy use, and population specific metrics."
+            ]),
+            html.P([
+                "The dataset used (as it was used) can be found in the ",
+                html.A("file tree of dreth's Statistical Learning project", href="https://github.com/dreth/UC3MStatisticalLearning/tree/main/data"),
+                ". The file path is as follows: /data/without_tags/data.csv."
+            ]),
+            html.H4("Dataset Variables:"),
+            html.Ul([
+                html.Li([html.Strong("year_code"), ": code for the year as the world bank databank sets it"]),
+                html.Li([html.Strong("country_name"), ": name of the country"]),
+                html.Li([html.Strong("country_code"), ": alpha-3 ISO 3166 code for the country"]),
+                html.Li([html.Strong("foreign_inv_inflows"), ": Foreign direct investment, net inflows (BoP, current US$)"]),
+                html.Li([html.Strong("exports_perc_gdp"), ": Exports of goods and services (as a % of GDP)"]),
+                html.Li([html.Strong("inflation_perc"), ": Inflation, consumer prices (annual %)"]),
+                html.Li([html.Strong("education_years"), ": Compulsory education, duration (years)"]),
+                html.Li([html.Strong("education_perc_gdp"), ": Government expenditure on education, total (as a % of GDP)"]),
+                html.Li([html.Strong("gds_perc_gdp"), ": Gross domestic savings (as a % of GDP)"]),
+                html.Li([html.Strong("gross_savings_perc_gdp"), ": Gross savings (as a % of GDP)"]),
+                html.Li([html.Strong("int_tourism_arrivals"), ": International tourism, number of arrivals"]),
+                html.Li([html.Strong("int_tourism_receipts"), ": International tourism, receipts (in current US$)"]),
+                html.Li([html.Strong("perc_internet_users"), ": Individuals using the Internet (as a % of population)"]),
+                html.Li([html.Strong("access_to_electricity"), ": Access to electricity (% of population)"]),
+                html.Li([html.Strong("agricultural_land"), ": Agricultural land (% of land area)"]),
+                html.Li([html.Strong("birth_rate"), ": Birth rate, crude (per 1,000 people)"]),
+                html.Li([html.Strong("gne"), ": Gross national expenditure (% of GDP)"]),
+                html.Li([html.Strong("mobile_subscriptions"), ": Mobile cellular subscriptions (per 100 people)"]),
+                html.Li([html.Strong("infant_mort_rate"), ": Mortality rate, infant (per 1,000 live births)"]),
+                html.Li([html.Strong("sex_ratio"), ": Sex ratio at birth (male births per female births)"]),
+                html.Li([html.Strong("greenhouse_gas_em"), ": Total greenhouse gas emissions (kt of CO2 equivalent)"]),
+                html.Li([html.Strong("urban_pop_perc"), ": Urban population (% of total population)"]),
+                html.Li([html.Strong("hdi"), ": human development index "]),
+                html.Li([html.Strong("hdi_cat"), ": Human development index as a category"]),
+                html.Li([html.Strong("life_exp"), ": Life expectancy at birth, total (years)"]),
+                html.Li([html.Strong("gdp"), ": GDP (current US$) "]),
+                html.Li([html.Strong("gni"), ": GNI (current US$)"]),
+                html.Li([html.Strong("fertility_rate"), ": Fertility rate, total (births per woman)"])
+            ]),
+            html.Img(src="https://raw.githubusercontent.com/dreth/UC3MDataTidyingAndReporting/main/First-takeaway/www/worldbanklogo.png", width=462.222, height=260)
+            ])
 
 
-    # RAMEN DATASET PAGES
+    #### RAMEN DATASET PAGES
+    # ramen ratings dataset introduction
     elif pathname == "/ramen-ratings":
         return html.P("This is the content of the home page!")
 
     
-    # 404 ERROR MESSAGE PAGE
+    #### 404 ERROR MESSAGE PAGE
     else:
         return dbc.Jumbotron(
             [
                 html.H1("404: Not found", className="text-danger"),
                 html.Hr(),
-                html.P(f"The path {pathname} does not exist"),
+                html.P(["The path ",
+                html.Span(f"{pathname}",id='pathName'),
+                " does not exist"]),
             ]
         )
 
 # %% SERVER
-
 
 # run server
 if __name__ == "__main__":

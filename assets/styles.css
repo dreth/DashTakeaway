@@ -13,3 +13,7 @@ hr {
 .sideBarDatasetTitles {
     color: rgb(199, 140, 148);
 }
+
+#pathName {
+    font-weight: bold;
+}

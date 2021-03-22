@@ -49,8 +49,6 @@ sidebar_tabs_ram = ['Ramen ratings', 'Top 10 by Rating',
                     'Top 10 with details', 'Regression for Ratings']
 
 # function to convert sidebar tab names into sidebar tabs
-
-
 def sidebar_tabs(tabnames, active='exact', external_link=True):
     navlinks = [0 for x in tabnames]
     for i in range(len(tabnames)):
@@ -67,7 +65,7 @@ def sidebar_tabs(tabnames, active='exact', external_link=True):
     return navlinks
 
 
-# Sidebar
+# SIDEBAR
 sidebar = html.Div(
     [
         html.H3("Dash App", className="fs-4", id='sideBarTitle'),
@@ -90,15 +88,14 @@ sidebar = html.Div(
     style=SIDEBAR_STYLE,
 )
 
-# content div
+# MAIN CONTENT
 content = html.Div(id="page-content", style=CONTENT_STYLE)
 
-# app general layout
+# APP LAYOUT CALL
 app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
 
-# %% PLOTTING FUNCTIONS
+# %% IMPORTING DATA AND DEFINING PLOTTING FUNCTIONS
 # functions used to plot each element in each tab of the app
-
 
 
 

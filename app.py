@@ -41,7 +41,7 @@ CONTENT_STYLE = {
 
 # Iterative generator of page navlinks for development dataset
 sidebar_tabs_dev = ['Development dataset', 'Histograms',
-                    'Boxplots', 'Correlation', 'HDI Aggregates', 'Top N countries']
+                    'Boxplots', 'Correlation', 'Top N countries']
 
 
 # Iterative generator of page navlinks for ramen ratings dataset

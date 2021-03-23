@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import plotly.express as px
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
 df = pd.read_csv(
     'https://raw.githubusercontent.com/dreth/UC3MStatisticalLearning/main/data/without_tags/data.csv')
@@ -18,9 +20,8 @@ def corr_table(dataset, var1, var2):
     return pd.DataFrame(corr_table)
 
 # correlation matrix heatmap function
-def corr_matrix_max(dataset):
-    # corr methods
-    methods = ['pearson', 'kendall', 'spearman']
+def corr_matrix_max(dataset, methods=['pearson', 'kendall', 'spearman']):
+    # dict for corr matrices per method
     matrices = {}
     # empty df
     max_corr_df = dataset.corr()
@@ -44,8 +45,13 @@ def corr_matrix_max(dataset):
             max_corr_df.iloc[i, j] = method_vals[method_vals_abs.index(best_c)]
             # appending what method was used to obtain previous correl
             method_used.iloc[i, j] = methods[method_vals_abs.index(best_c)]
-    return {'corrs':max_corr_df,'methods':method_used}
+    return {'corrs': max_corr_df, 'methods': method_used}
 
+# sort values on dataframe according to var
+def sort_var(dataset, var, n=10, bottom_to_top=False):
+    result = dataset.sort_values([var], axis='index', ascending=bottom_to_top)
+    result = result.iloc[1:n,:]
+    return result.reset_index(drop=True)
 
 # %% PLOTTING FUNCTIONS
 # barplot function
@@ -57,6 +63,7 @@ def bar(dataset, x, y, groupvar=False):
     }
     if groupvar != False:
         params['color'] = groupvar
+        params['category_orders'] = {x:dataset[x]}
     return px.bar(**params)
 
 # histogram function
@@ -106,6 +113,10 @@ def scatter(dataset, x, y, flip=False, groupvar=False, size=False):
 def corr_matrix_heatmap(dataset):
     mat = corr_matrix_max(dataset)['corrs']
     return px.imshow(mat.values,
-              x=mat.columns,
-              y=mat.columns)
-# %%
+                     x=mat.columns,
+                     y=mat.columns)
+
+# function to plot top n for a variable with n entries
+def topn(dataset, var, indexer='country_code', n=10,  bottom_to_top=False, groupvar=False):
+    result = sort_var(dataset, var, n=n, bottom_to_top=bottom_to_top)
+    return bar(result, indexer, var, groupvar=groupvar)

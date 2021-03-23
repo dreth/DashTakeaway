@@ -102,6 +102,7 @@ def scatter(dataset, x, y, flip=False, groupvar=False, size=False):
         params['size'] = size
     return px.scatter(**params)
 
+# function to plot the corr matrix heatmap
 def corr_matrix_heatmap(dataset):
     mat = corr_matrix_max(dataset)['corrs']
     return px.imshow(mat.values,

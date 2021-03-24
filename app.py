@@ -6,6 +6,7 @@ import dash_html_components as html
 import dash_bootstrap_components as dbc
 import plotly.express as px
 import pandas as pd
+from plotly.subplots import make_subplots
 from dash.dependencies import Input, Output
 
 # Bootstrap stylesheet

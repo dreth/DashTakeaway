@@ -6,6 +6,7 @@ import dash_bootstrap_components as dbc
 import plotly.express as px
 import pandas as pd
 import numpy as np
+import dash_table
 from dash.dependencies import Input, Output
 
 # Bootstrap stylesheet
@@ -39,22 +40,27 @@ CONTENT_STYLE = {
 }
 
 # %% IMPORTING THE DATA
-## DEVELOPMENT DATA
+# DEVELOPMENT DATA
 # importing data
 dev_df = pd.read_csv(
     'https://raw.githubusercontent.com/dreth/UC3MStatisticalLearning/main/data/without_tags/data.csv')
 
 # numeric cols
 dev_val_cols = list(dev_df.columns[2:len(dev_df.columns)-1])
+dev_val_col_options = [{'label': x, 'value': x}
+                       for x in dev_val_cols]
+dev_val_col_options_non_neg = [{'label': x, 'value': x}
+                               for x in dev_val_cols if True not in list(dev_df[x] < 0)]
 
 # identity cols
 dev_identity_cols = list(dev_df.columns[0:2])
+dev_id_col_options = [{'label': x, 'value': x}
+                      for x in dev_identity_cols]
 
 # grouping col
 dev_group_col = 'hdi_cat'
 
 # %% APP LAYOUT
-
 # Iterative generator of page navlinks for development dataset
 sidebar_tabs_dev = ['Development dataset', 'Histograms',
                     'Boxplots', 'Correlation', 'Top N countries']
@@ -236,9 +242,10 @@ def topn(dataset, var, indexer='country_code', n=10,  bottom_to_top=False, group
     result = sort_var(dataset, var, n=n, bottom_to_top=bottom_to_top)
     return bar(result, indexer, var, groupvar=groupvar)
 
-
 # %% PAGE CONTENT
 # website content layout and text
+
+
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
 def render_page_content(pathname):
     # HOMEPAGE
@@ -258,7 +265,7 @@ def render_page_content(pathname):
             html.P("Feel free to navigate the page and play around with the menus!")
         ])
 
-    # DEVELOPMENT DATASET PAGES
+    ## DEVELOPMENT DATASET PAGES ##
     # development dataset introduction
     elif pathname == "/development-dataset":
         return dbc.Jumbotron([
@@ -336,30 +343,154 @@ def render_page_content(pathname):
             ]),
             html.Img(src="https://raw.githubusercontent.com/dreth/UC3MDataTidyingAndReporting/main/First-takeaway/www/worldbanklogo.png", width=462.222, height=260)
         ])
-    
-    # Histogram section for 
+
+    # Histogram section
     elif pathname == '/histograms':
         return html.Div([
+            html.H3('Histograms per variable'),
             dbc.Jumbotron([
-                html.H3('Histograms per variable'),
                 html.Label('Select variable'),
                 dcc.Dropdown(id='variableSelectorHist',
-                             options=[{'label': x, 'value': x}
-                                      for x in dev_val_cols],
+                             options=dev_val_col_options,
                              value=np.random.choice(dev_val_cols)
                              ),
                 html.Br(),
-            dcc.RadioItems(id='groupByHDIHist',
-                              options=[
+                html.Label('HDI grouping'),
+                dcc.RadioItems(id='groupByHDIHist',
+                               options=[
                                   {'label': 'Group by HDI', 'value': 1},
                                   {'label': 'Do not group', 'value': 0}
-                                ],
-                              value=1,
-                              labelStyle={'display': 'block'}
-                              )
+                               ],
+                               value=1,
+                               labelStyle={'display': 'block'}
+                               )
             ]),
             dbc.Jumbotron([
                 dcc.Graph(id="devHistOutput")
+            ])
+        ])
+
+    # Boxplot section
+    elif pathname == '/boxplots':
+        return html.Div([
+            dbc.Jumbotron([
+                html.H3('Boxplot per variable'),
+                html.Label('Select variable'),
+                dcc.Dropdown(id='variableSelectorBox',
+                             options=dev_val_col_options,
+                             value=np.random.choice(dev_val_cols)
+                             ),
+                html.Br(),
+                html.Label('HDI grouping'),
+                dcc.RadioItems(id='groupByHDIBox',
+                               options=[
+                                  {'label': 'Group by HDI', 'value': 1},
+                                  {'label': 'Do not group', 'value': 0}
+                               ],
+                               value=1,
+                               labelStyle={'display': 'block'}
+                               )
+            ]),
+            dbc.Jumbotron([
+                dcc.Graph(id="devBoxOutput")
+            ])
+        ])
+
+    # Correlation section
+    elif pathname == '/correlation':
+        return html.Div([
+            html.H4('Scatter plot + Correlation between variables'),
+            dbc.Jumbotron([
+                html.Label('Select variable 1'),
+                dcc.Dropdown(id='variableSelectorScatter1',
+                             options=dev_val_col_options,
+                             value=np.random.choice(dev_val_cols)
+                             ),
+                html.Br(),
+                html.Label('Select variable 2'),
+                dcc.Dropdown(id='variableSelectorScatter2',
+                             options=dev_val_col_options,
+                             value=np.random.choice(dev_val_cols)
+                             ),
+                html.Br(),
+                html.Label('Select variable for dot size'),
+                dcc.Dropdown(id='variableSelectorScatter3',
+                             options=[{'label': 'None', 'value': 'None'}
+                                      ] + dev_val_col_options_non_neg,
+                             value='None'
+                             ),
+                html.Br(),
+                html.Label('HDI grouping'),
+                dcc.RadioItems(id='groupByHDIScatter',
+                               options=[
+                                   {'label': 'Group by HDI', 'value': 1},
+                                   {'label': 'Do not group', 'value': 0}
+                               ],
+                               value=1,
+                               labelStyle={'display': 'block'}
+                               )
+            ]),
+            dbc.Jumbotron([
+                html.Label('Correlation coefficient computations for the 2 selected variables'),
+                html.Div(id='correlDataTable')
+            ]),
+            dbc.Jumbotron([
+                html.Label('Scatter plot result'),
+                dcc.Graph(id="devScatterOutput")
+            ])
+        ])
+
+    # top n countries section
+    elif pathname == '/top-n-countries':
+        return html.Div([
+            html.H4('Visualizing top N countries per variable'),
+            dbc.Jumbotron([
+                html.Label('Select variable'),
+                dcc.Dropdown(id='variableSelectorTopN',
+                             options=dev_val_col_options,
+                             value=np.random.choice(dev_val_cols)
+                             ),
+                html.Br(),
+                html.Label('Select id variable'),
+                dcc.Dropdown(id='variableSelectorTopNId',
+                             options=dev_id_col_options,
+                             value=np.random.choice(dev_identity_cols)
+                             ),
+                html.Br(),
+                html.Label('Amount of countries to show'),
+                dcc.Slider(id='amountCountriesTopNSlider',
+                           min=1,
+                           max=184,
+                           value=10,
+                           marks={**{1: '1', 184: '184'}, **
+                                  {x: str(x) for x in range(1, 184) if x % 21 == 0}},
+                           step=1
+                           ),
+                html.Br(),
+                html.Br(),
+                html.Label('Country sorting'),
+                dcc.RadioItems(id='sortingTopN',
+                               options=[
+                                   {'label': 'Descending', 'value': 0},
+                                   {'label': 'Ascending', 'value': 1}
+                               ],
+                               value=0,
+                               labelStyle={'display': 'block'}
+                               ),
+                html.Br(),
+                html.Label('HDI grouping'),
+                dcc.RadioItems(id='groupByHDITopN',
+                               options=[
+                                   {'label': 'Group by HDI', 'value': 1},
+                                   {'label': 'Do not group', 'value': 0}
+                               ],
+                               value=1,
+                               labelStyle={'display': 'block'}
+                               ),
+
+            ]),
+            dbc.Jumbotron([
+                dcc.Graph(id="devTopNOutput")
             ])
         ])
 
@@ -381,19 +512,83 @@ def render_page_content(pathname):
         )
 
 # %% PLOT CALLBACKS
+## DEVELOPMENT ##
+# Histograms
 @app.callback(Output('devHistOutput', 'figure'),
               Input('variableSelectorHist', 'value'),
               Input('groupByHDIHist', 'value'))
 def update_graph(variableSelectorHist, groupByHDIHist):
     if groupByHDIHist == 1:
-        groupvar = 'hdi_cat'
+        groupByHDIHist = 'hdi_cat'
     else:
-        groupvar = False
-    return hist(dev_df, x=variableSelectorHist, groupvar=groupvar)
+        groupByHDIHist = False
+    return hist(dev_df, x=variableSelectorHist, groupvar=groupByHDIHist)
+
+# Boxplots
+@app.callback(Output('devBoxOutput', 'figure'),
+              Input('variableSelectorBox', 'value'),
+              Input('groupByHDIBox', 'value'))
+def update_graph(variableSelectorBox, groupByHDIBox):
+    if groupByHDIBox == 1:
+        groupByHDIBox = 'hdi_cat'
+    else:
+        groupByHDIBox = False
+    return box(dev_df, x=variableSelectorBox, groupvar=groupByHDIBox)
+
+# Correlation
+@app.callback(Output('devScatterOutput', 'figure'),
+              Input('variableSelectorScatter1', 'value'),
+              Input('variableSelectorScatter2', 'value'),
+              Input('variableSelectorScatter3', 'value'),
+              Input('groupByHDIScatter', 'value'))
+def update_graph(variableSelectorScatter1, variableSelectorScatter2, variableSelectorScatter3, groupByHDIScatter):
+    if variableSelectorScatter3 == 'None':
+        variableSelectorScatter3 = False
+    if groupByHDIScatter == 1:
+        groupByHDIScatter = 'hdi_cat'
+    else:
+        groupByHDIScatter = False
+    return scatter(dataset=dev_df, x=variableSelectorScatter1, y=variableSelectorScatter2, size=variableSelectorScatter3, groupvar=groupByHDIScatter)
+
+# Correlation coefs
+@app.callback(Output('correlDataTable', 'children'),
+              Input('variableSelectorScatter1', 'value'),
+              Input('variableSelectorScatter2', 'value'))
+def update_graph(variableSelectorScatter1, variableSelectorScatter2):
+    data = corr_table(dev_df, var1=variableSelectorScatter1,
+                      var2=variableSelectorScatter2)
+    table = dash_table.DataTable(
+        columns=[{'name': x, 'id': x} for x in data.columns], data=data.to_dict('records'),
+        style_cell={'color':'white',
+        'backgroundColor':'black'},
+        style_header={'color':'aquamarine',
+        'backgroundColor':'black'})
+    return table
+
+# Top N
+@app.callback(Output('devTopNOutput', 'figure'),
+              Input('variableSelectorTopN', 'value'),
+              Input('variableSelectorTopNId', 'value'),
+              Input('amountCountriesTopNSlider', 'value'),
+              Input('groupByHDITopN', 'value'),
+              Input('sortingTopN', 'value'))
+def update_graph(variableSelectorTopN, variableSelectorTopNId, amountCountriesTopNSlider, groupByHDITopN, sortingTopN):
+    if groupByHDITopN == 1:
+        groupByHDITopN = 'hdi_cat'
+    else:
+        groupByHDITopN = False
+    if sortingTopN == 1:
+        sortingTopN = True
+    else:
+        sortingTopN = False
+    return topn(dataset=dev_df, var=variableSelectorTopN, indexer=variableSelectorTopNId, n=amountCountriesTopNSlider, groupvar=groupByHDITopN, bottom_to_top=sortingTopN)
+
+
+## RAMEN RATINGS ##
 
 # %% SERVER
 
 
 # run server
 if __name__ == "__main__":
-    app.run_server(port=5665)
+    app.run_server(port=5665, debug=True)

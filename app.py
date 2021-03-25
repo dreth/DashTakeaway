@@ -8,14 +8,14 @@ import pandas as pd
 import numpy as np
 import dash_table
 from dash.dependencies import Input, Output
+import json
 
 # Bootstrap stylesheet
 external_stylesheets = [
     'https://stackpath.bootstrapcdn.com/bootswatch/4.5.2/cyborg/bootstrap.min.css']
 
 # Dash app initialization
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets,
-                title='Multiple dataset Dash app')
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets, title="dan+dandan's Dash App")
 
 # %% LAYOUT STYLES
 
@@ -212,7 +212,7 @@ def box(dataset, x, y=False, horiz=True, groupvar=False):
     return px.box(**params)
 
 
-def scatter(dataset, x, y, flip=False, groupvar=False, size=False):
+def scatter(dataset, x, y, flip=False, groupvar=False, size=False, hover_data=False):
     # scatterplot function
     params = {
         'data_frame': dataset,
@@ -226,6 +226,8 @@ def scatter(dataset, x, y, flip=False, groupvar=False, size=False):
         params['color'] = groupvar
     if size != False:
         params['size'] = size
+    if hover_data != False:
+        params['hover_data'] = hover_data
     return px.scatter(**params)
 
 
@@ -420,6 +422,12 @@ def render_page_content(pathname):
                              value='None'
                              ),
                 html.Br(),
+                html.Label('Select variable to identify dots'),
+                dcc.Dropdown(id='variableSelectorScatterHover',
+                             options=dev_id_col_options,
+                             value='country_name'
+                             ),
+                html.Br(),
                 html.Label('HDI grouping'),
                 dcc.RadioItems(id='groupByHDIScatter',
                                options=[
@@ -437,7 +445,8 @@ def render_page_content(pathname):
             dbc.Jumbotron([
                 html.Label('Scatter plot result'),
                 dcc.Graph(id="devScatterOutput")
-            ])
+            ]),
+            html.Div(id="correlationOutputData")
         ])
 
     # top n countries section
@@ -511,12 +520,11 @@ def render_page_content(pathname):
             ]
         )
 
-# %% PLOT CALLBACKS
-## DEVELOPMENT ##
+# %% DEVELOPMENT PLOT CALLBACKS
 # Histograms
 @app.callback(Output('devHistOutput', 'figure'),
-              Input('variableSelectorHist', 'value'),
-              Input('groupByHDIHist', 'value'))
+              [Input('variableSelectorHist', 'value'),
+              Input('groupByHDIHist', 'value')])
 def update_graph(variableSelectorHist, groupByHDIHist):
     if groupByHDIHist == 1:
         groupByHDIHist = 'hdi_cat'
@@ -526,8 +534,8 @@ def update_graph(variableSelectorHist, groupByHDIHist):
 
 # Boxplots
 @app.callback(Output('devBoxOutput', 'figure'),
-              Input('variableSelectorBox', 'value'),
-              Input('groupByHDIBox', 'value'))
+              [Input('variableSelectorBox', 'value'),
+              Input('groupByHDIBox', 'value')])
 def update_graph(variableSelectorBox, groupByHDIBox):
     if groupByHDIBox == 1:
         groupByHDIBox = 'hdi_cat'
@@ -537,23 +545,24 @@ def update_graph(variableSelectorBox, groupByHDIBox):
 
 # Correlation
 @app.callback(Output('devScatterOutput', 'figure'),
-              Input('variableSelectorScatter1', 'value'),
+              [Input('variableSelectorScatter1', 'value'),
               Input('variableSelectorScatter2', 'value'),
               Input('variableSelectorScatter3', 'value'),
-              Input('groupByHDIScatter', 'value'))
-def update_graph(variableSelectorScatter1, variableSelectorScatter2, variableSelectorScatter3, groupByHDIScatter):
+              Input('variableSelectorScatterHover', 'value'),
+              Input('groupByHDIScatter', 'value')])
+def update_graph(variableSelectorScatter1, variableSelectorScatter2, variableSelectorScatter3, variableSelectorScatterHover, groupByHDIScatter):
     if variableSelectorScatter3 == 'None':
         variableSelectorScatter3 = False
     if groupByHDIScatter == 1:
         groupByHDIScatter = 'hdi_cat'
     else:
         groupByHDIScatter = False
-    return scatter(dataset=dev_df, x=variableSelectorScatter1, y=variableSelectorScatter2, size=variableSelectorScatter3, groupvar=groupByHDIScatter)
+    return scatter(dataset=dev_df, x=variableSelectorScatter1, y=variableSelectorScatter2, size=variableSelectorScatter3, groupvar=groupByHDIScatter, hover_data=[variableSelectorScatterHover])
 
 # Correlation coefs
 @app.callback(Output('correlDataTable', 'children'),
-              Input('variableSelectorScatter1', 'value'),
-              Input('variableSelectorScatter2', 'value'))
+              [Input('variableSelectorScatter1', 'value'),
+              Input('variableSelectorScatter2', 'value')])
 def update_graph(variableSelectorScatter1, variableSelectorScatter2):
     data = corr_table(dev_df, var1=variableSelectorScatter1,
                       var2=variableSelectorScatter2)
@@ -567,11 +576,11 @@ def update_graph(variableSelectorScatter1, variableSelectorScatter2):
 
 # Top N
 @app.callback(Output('devTopNOutput', 'figure'),
-              Input('variableSelectorTopN', 'value'),
+              [Input('variableSelectorTopN', 'value'),
               Input('variableSelectorTopNId', 'value'),
               Input('amountCountriesTopNSlider', 'value'),
               Input('groupByHDITopN', 'value'),
-              Input('sortingTopN', 'value'))
+              Input('sortingTopN', 'value')])
 def update_graph(variableSelectorTopN, variableSelectorTopNId, amountCountriesTopNSlider, groupByHDITopN, sortingTopN):
     if groupByHDITopN == 1:
         groupByHDITopN = 'hdi_cat'
@@ -583,12 +592,40 @@ def update_graph(variableSelectorTopN, variableSelectorTopNId, amountCountriesTo
         sortingTopN = False
     return topn(dataset=dev_df, var=variableSelectorTopN, indexer=variableSelectorTopNId, n=amountCountriesTopNSlider, groupvar=groupByHDITopN, bottom_to_top=sortingTopN)
 
+# Top N bottom table from plot selection
+@app.callback(Output('correlationOutputData','children'),
+              [Input('devScatterOutput','selectedData'),
+              Input('variableSelectorScatter1', 'value'),
+              Input('variableSelectorScatter2', 'value'),
+              Input('variableSelectorScatter3', 'value'),
+              Input('variableSelectorScatterHover', 'value')])
+def display_table(devScatterOutput, variableSelectorScatter1, variableSelectorScatter2, variableSelectorScatter3, variableSelectorScatterHover):
+    if devScatterOutput is None or len(devScatterOutput) == 0:
+        return None
+    cols = [
+            {'name':variableSelectorScatterHover,'id':variableSelectorScatterHover},
+            {'name':variableSelectorScatter1,'id':variableSelectorScatter1},
+            {'name':variableSelectorScatter2,'id':variableSelectorScatter2}
+    ]
+    if variableSelectorScatter3 != 'None':
+        cols.update({'name':variableSelectorScatter3,'id':variableSelectorScatter3})
+    # finding out which countries are selected to filter
+    countries = [o['customdata'][0] for o in devScatterOutput['points']]
+    # filtering the data
+    filtered_df_records = dev_df[dev_df[variableSelectorScatterHover].isin(countries)].to_dict('records') 
+    # table with data filtered
+    tbl = dash_table.DataTable(columns=cols,
+                              data=filtered_df_records,
+                              style_cell={'color':'white',
+                              'backgroundColor':'black'},
+                              style_header={'color':'aquamarine',
+                              'backgroundColor':'black'})
+    return dbc.Jumbotron([html.Label('Table for data selected in the scatterplot'),tbl])
+                               
 
-## RAMEN RATINGS ##
+# %% RAMEN RATINGS PLOT CALLBACKS
 
 # %% SERVER
-
-
 # run server
 if __name__ == "__main__":
     app.run_server(port=5665, debug=True)

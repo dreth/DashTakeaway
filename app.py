@@ -40,8 +40,7 @@ CONTENT_STYLE = {
     "padding": "2rem 1rem"
 }
 
-# %% IMPORTING THE DATA
-# DEVELOPMENT DATA
+# %% IMPORTING THE DEVELOPMENT DATA
 # importing data
 dev_df = pd.read_csv(
     'https://raw.githubusercontent.com/dreth/UC3MStatisticalLearning/main/data/without_tags/data.csv')
@@ -60,6 +59,10 @@ dev_id_col_options = [{'label': x, 'value': x}
 
 # grouping col
 dev_group_col = 'hdi_cat'
+
+# %% IMPORTING THE RAMEN RATINGS DATA
+# importing data
+ramen = pd.read_csv("https://raw.githubusercontent.com/danyuz/FinalShinyAPP/master/ramen-ratings.csv")
 
 # %% APP LAYOUT
 # Iterative generator of page navlinks for development dataset
@@ -530,6 +533,9 @@ def render_page_content(pathname):
                         'How is ramen manufacturing internationally distributed?')
                     ])
         ])
+    
+    # Raw data table, ramen ratings
+
 
     # 404 ERROR MESSAGE PAGE
     else:

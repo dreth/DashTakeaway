@@ -15,7 +15,8 @@ external_stylesheets = [
     'https://stackpath.bootstrapcdn.com/bootswatch/4.5.2/cyborg/bootstrap.min.css']
 
 # Dash app initialization
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets, title="dan+dandan's Dash App")
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets,
+                title="dan+dandan's Dash App")
 
 # %% LAYOUT STYLES
 
@@ -245,10 +246,8 @@ def topn(dataset, var, indexer='country_code', n=10,  bottom_to_top=False, group
     return bar(result, indexer, var, groupvar=groupvar)
 
 # %% PAGE CONTENT
-# website content layout and text
-
-
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
+# website content layout and text
 def render_page_content(pathname):
     # HOMEPAGE
     if pathname == '/':
@@ -261,8 +260,9 @@ def render_page_content(pathname):
             ]),
             html.P("This application uses 2 datasets, specific information about each dataset is detailed in the following links:"),
             html.Ul([
-                html.Li(html.A("The development dataset", href='/The-dataset')),
-                html.Li(html.A("Ramen ratings dataset", href='/Introduction'))
+                html.Li(html.A("The development dataset",
+                               href='/development-dataset')),
+                html.Li(html.A("Ramen ratings dataset", href='/ramen-ratings'))
             ]),
             html.P("Feel free to navigate the page and play around with the menus!")
         ])
@@ -439,7 +439,8 @@ def render_page_content(pathname):
                                )
             ]),
             dbc.Jumbotron([
-                html.Label('Correlation coefficient computations for the 2 selected variables'),
+                html.Label(
+                    'Correlation coefficient computations for the 2 selected variables'),
                 html.Div(id='correlDataTable')
             ]),
             dbc.Jumbotron([
@@ -506,7 +507,29 @@ def render_page_content(pathname):
     # RAMEN DATASET PAGES
     # ramen ratings dataset introduction
     elif pathname == "/ramen-ratings":
-        return html.P("This is the content of the home page!")
+        return dcc.Jumbotron([
+            html.H3("Ramen Ratings"),
+            html.H5("Context"),
+            html.P('The Ramen Rater is a product review website for the hardcore ramen enthusiast (or “ramenphile”), with over 2500 reviews to date. This dataset is an export of “The Big List” (of reviews), converted to a CSV format.'),
+            html.H5("Content"),
+            html.P(["Each record in the dataset is a single ramen product review. Review numbers are contiguous: more recently reviewed ramen varieties have higher numbers. Brand, Variety (the product name), Country, and Style (Cup? Bowl? Tray?) are pretty self-explanatory. Stars indicate the ramen quality, as assessed by the reviewer, on a 5-point scale; this is the most important column in the dataset!",
+                    "Note that this dataset does not include the text of the reviews themselves. For that, you should browse through ",
+                    html.A("link", href="https://www.theramenrater.com/"), "instead!"
+                    ]),
+            html.H5("Acknowledgements"),
+            html.P(["This dataset is republished as-is from the original BIG LIST on",
+                    html.A("link.", href="https://www.theramenrater.com/")
+                    ]),
+            html.H5("Inspiration"),
+            html.Ul([
+                    html.Li(
+                        'What ingredients or flavors are most commonly advertised on ramen package labels?'),
+                    html.Li(
+                        'How do ramen ratings compare against ratings for other food products (like, say, wine)?'),
+                    html.Li(
+                        'How is ramen manufacturing internationally distributed?')
+                    ])
+        ])
 
     # 404 ERROR MESSAGE PAGE
     else:
@@ -521,10 +544,12 @@ def render_page_content(pathname):
         )
 
 # %% DEVELOPMENT PLOT CALLBACKS
-# Histograms
+
+
 @app.callback(Output('devHistOutput', 'figure'),
               [Input('variableSelectorHist', 'value'),
-              Input('groupByHDIHist', 'value')])
+               Input('groupByHDIHist', 'value')])
+# Histograms
 def update_graph(variableSelectorHist, groupByHDIHist):
     if groupByHDIHist == 1:
         groupByHDIHist = 'hdi_cat'
@@ -532,10 +557,11 @@ def update_graph(variableSelectorHist, groupByHDIHist):
         groupByHDIHist = False
     return hist(dev_df, x=variableSelectorHist, groupvar=groupByHDIHist)
 
-# Boxplots
+
 @app.callback(Output('devBoxOutput', 'figure'),
               [Input('variableSelectorBox', 'value'),
-              Input('groupByHDIBox', 'value')])
+               Input('groupByHDIBox', 'value')])
+# Boxplots
 def update_graph(variableSelectorBox, groupByHDIBox):
     if groupByHDIBox == 1:
         groupByHDIBox = 'hdi_cat'
@@ -543,13 +569,14 @@ def update_graph(variableSelectorBox, groupByHDIBox):
         groupByHDIBox = False
     return box(dev_df, x=variableSelectorBox, groupvar=groupByHDIBox)
 
-# Correlation
+
 @app.callback(Output('devScatterOutput', 'figure'),
               [Input('variableSelectorScatter1', 'value'),
-              Input('variableSelectorScatter2', 'value'),
-              Input('variableSelectorScatter3', 'value'),
-              Input('variableSelectorScatterHover', 'value'),
-              Input('groupByHDIScatter', 'value')])
+               Input('variableSelectorScatter2', 'value'),
+               Input('variableSelectorScatter3', 'value'),
+               Input('variableSelectorScatterHover', 'value'),
+               Input('groupByHDIScatter', 'value')])
+# Correlation
 def update_graph(variableSelectorScatter1, variableSelectorScatter2, variableSelectorScatter3, variableSelectorScatterHover, groupByHDIScatter):
     if variableSelectorScatter3 == 'None':
         variableSelectorScatter3 = False
@@ -559,28 +586,30 @@ def update_graph(variableSelectorScatter1, variableSelectorScatter2, variableSel
         groupByHDIScatter = False
     return scatter(dataset=dev_df, x=variableSelectorScatter1, y=variableSelectorScatter2, size=variableSelectorScatter3, groupvar=groupByHDIScatter, hover_data=[variableSelectorScatterHover])
 
-# Correlation coefs
+
 @app.callback(Output('correlDataTable', 'children'),
               [Input('variableSelectorScatter1', 'value'),
-              Input('variableSelectorScatter2', 'value')])
+               Input('variableSelectorScatter2', 'value')])
+# Correlation coefs
 def update_graph(variableSelectorScatter1, variableSelectorScatter2):
     data = corr_table(dev_df, var1=variableSelectorScatter1,
                       var2=variableSelectorScatter2)
     table = dash_table.DataTable(
         columns=[{'name': x, 'id': x} for x in data.columns], data=data.to_dict('records'),
-        style_cell={'color':'white',
-        'backgroundColor':'black'},
-        style_header={'color':'aquamarine',
-        'backgroundColor':'black'})
+        style_cell={'color': 'white',
+                    'backgroundColor': 'black'},
+        style_header={'color': 'aquamarine',
+                      'backgroundColor': 'black'})
     return table
 
-# Top N
+
 @app.callback(Output('devTopNOutput', 'figure'),
               [Input('variableSelectorTopN', 'value'),
-              Input('variableSelectorTopNId', 'value'),
-              Input('amountCountriesTopNSlider', 'value'),
-              Input('groupByHDITopN', 'value'),
-              Input('sortingTopN', 'value')])
+               Input('variableSelectorTopNId', 'value'),
+               Input('amountCountriesTopNSlider', 'value'),
+               Input('groupByHDITopN', 'value'),
+               Input('sortingTopN', 'value')])
+# Top N
 def update_graph(variableSelectorTopN, variableSelectorTopNId, amountCountriesTopNSlider, groupByHDITopN, sortingTopN):
     if groupByHDITopN == 1:
         groupByHDITopN = 'hdi_cat'
@@ -592,36 +621,39 @@ def update_graph(variableSelectorTopN, variableSelectorTopNId, amountCountriesTo
         sortingTopN = False
     return topn(dataset=dev_df, var=variableSelectorTopN, indexer=variableSelectorTopNId, n=amountCountriesTopNSlider, groupvar=groupByHDITopN, bottom_to_top=sortingTopN)
 
+
+@app.callback(Output('correlationOutputData', 'children'),
+              [Input('devScatterOutput', 'selectedData'),
+               Input('variableSelectorScatter1', 'value'),
+               Input('variableSelectorScatter2', 'value'),
+               Input('variableSelectorScatter3', 'value'),
+               Input('variableSelectorScatterHover', 'value')])
 # Top N bottom table from plot selection
-@app.callback(Output('correlationOutputData','children'),
-              [Input('devScatterOutput','selectedData'),
-              Input('variableSelectorScatter1', 'value'),
-              Input('variableSelectorScatter2', 'value'),
-              Input('variableSelectorScatter3', 'value'),
-              Input('variableSelectorScatterHover', 'value')])
 def display_table(devScatterOutput, variableSelectorScatter1, variableSelectorScatter2, variableSelectorScatter3, variableSelectorScatterHover):
     if devScatterOutput is None or len(devScatterOutput) == 0:
         return None
     cols = [
-            {'name':variableSelectorScatterHover,'id':variableSelectorScatterHover},
-            {'name':variableSelectorScatter1,'id':variableSelectorScatter1},
-            {'name':variableSelectorScatter2,'id':variableSelectorScatter2}
+        {'name': variableSelectorScatterHover, 'id': variableSelectorScatterHover},
+        {'name': variableSelectorScatter1, 'id': variableSelectorScatter1},
+        {'name': variableSelectorScatter2, 'id': variableSelectorScatter2}
     ]
     if variableSelectorScatter3 != 'None':
-        cols.update({'name':variableSelectorScatter3,'id':variableSelectorScatter3})
+        cols.update({'name': variableSelectorScatter3,
+                     'id': variableSelectorScatter3})
     # finding out which countries are selected to filter
     countries = [o['customdata'][0] for o in devScatterOutput['points']]
     # filtering the data
-    filtered_df_records = dev_df[dev_df[variableSelectorScatterHover].isin(countries)].to_dict('records') 
+    filtered_df_records = dev_df[dev_df[variableSelectorScatterHover].isin(
+        countries)].to_dict('records')
     # table with data filtered
     tbl = dash_table.DataTable(columns=cols,
-                              data=filtered_df_records,
-                              style_cell={'color':'white',
-                              'backgroundColor':'black'},
-                              style_header={'color':'aquamarine',
-                              'backgroundColor':'black'})
-    return dbc.Jumbotron([html.Label('Table for data selected in the scatterplot'),tbl])
-                               
+                               data=filtered_df_records,
+                               style_cell={'color': 'white',
+                                           'backgroundColor': 'black'},
+                               style_header={'color': 'aquamarine',
+                                             'backgroundColor': 'black'})
+    return dbc.Jumbotron([html.Label('Table for data selected in the scatterplot'), tbl])
+
 
 # %% RAMEN RATINGS PLOT CALLBACKS
 

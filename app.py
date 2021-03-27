@@ -38,21 +38,21 @@ instructionsDev = """
 
 
 - **histograms**: section where histograms are plotted for each variable in the dataset
-    - **Options**:
+    - **Controls/Inputs**:
         - Variable selection to plot a variable from the dataset
-        - Option to group by HDI category or not\
+        - Option to group by HDI category or not
 
 
 
 - **boxplots**: section where boxplots are plotted for each variable in the dataset
-    - **Options**:
+    - **Controls/Inputs**:
         - Variable selection to plot a variable from the dataset
-        - Option to group by HDI category or not\
+        - Option to group by HDI category or not
 
 
 
 - **correlation**:
-    - **Options**:
+    - **Controls/Inputs**:
         - Select first variable to plot against variable 2
         - Select second variable to plot against variable 1
         - Select variable to plot against variable 1 and 2 in a third dimension (dot size)
@@ -60,9 +60,56 @@ instructionsDev = """
         - HDI grouping (allows to plot the variable with dots coloured by their respective HDI category)
     - **Tables**:
         - Correlation table which displays the given correlation between variable 1 and variable 2, it's shown using 3 different correlation coefficients
+            - If a third variable is selected (dot size), 2 extra tables for correlation with be shown, one with correlation between variable 1 and 3 and the second one with correlation between variable 2 and 3
         - *The second table is hidden until the user selects data within the plot*, this table shows the underlying data used to plot the scatterplot with the identifier selected in the 4th dropdown menu (variable to identify dots).
+    - **Graph**:
+        - The scatterplot can be used to select data points to show a table under the graph with the selected data 
 
 
+
+- **top n countries**:
+    - **Controls/Inputs**:
+        - Select variable to plot the barplots
+        - Select the variable to identify the bars (x axis)
+        - Slider to determine how many countries to show
+        - Country sorting (the barplot can measure the lowest ranked countries or the top ranked countries for the selected variable)
+        - The bars can be coloured by HDI category
+"""
+
+
+# instruction for the Ramen Ratings dataset section
+instructionsRam = """
+##### Section 2: The Ramen ratings dataset
+
+###### Layout and options
+
+
+
+- **ramen ratings**: introduction page for the dataset including source and variable description
+
+
+
+
+- **dataset table**:
+    - **Controls/Inputs**:
+        - As at least a single categorical and numerical variable should be shown, we divide a categorical variable selector and a numerical variable selector. Both are multi drop down selectors to choose as many variables as there are in the dataset.
+
+
+
+
+- **barplots**:
+    - **Controls/Inputs**:
+        - Categorical variable selector between style or country (All styles and countries are plotted at once)
+        - Aggregation function selector, allows for selecting between 7 different functions to compute values respective to the star rating of each country or style
+        - Descending or ascending bar sorting for the barplot
+
+
+
+
+- **boxplots**:
+    - **Controls/Inputs**:
+        - Categorical column selector betweeen style or country, alternatively the user can select to use the same variable as shown previously in the barplots section (this is stored in the session of the dash core components Store as a dictionary and pulled in the boxplots page to be used if the user desires to do so)
+        - Boxplot orientation between horizontal and vertical
 """
 
 # %% LAYOUT STYLES
@@ -145,12 +192,12 @@ ramen_agg_options = [{'label': x, 'value': x}
 
 # %% APP LAYOUT
 # Iterative generator of page navlinks for development dataset
-sidebar_tabs_dev = ['Development dataset', 'Histograms',
-                    'Boxplots', 'Correlation', 'Top N countries']
+sidebar_tabs_dev = ['development dataset','histograms',
+                    'Boxplots', 'correlation', 'Top N countries']
 
 
 # Iterative generator of page navlinks for ramen ratings dataset
-sidebar_tabs_ram = ['Ramen ratings', 'Dataset table', 'Barplots',
+sidebar_tabs_ram = ['ramen ratings', 'Dataset table', 'Barplots',
                     'Boxplots']
 
 
@@ -174,7 +221,8 @@ def sidebar_tabs(tabnames, tag, active='exact', external_link=True):
 # SIDEBAR
 sidebar = html.Div(
     [
-        html.H3("🧙‍♂️ Dash App", className="fs-4", id='sideBarTitle'),
+        html.A(html.H3("🧙‍♂️ Dash App", className="fs-4",
+                       id='sideBarTitle'), href="/"),
         html.Hr(),
         html.H5("🌃 The development dataset",
                 className="fs-5 sideBarDatasetTitles"),
@@ -210,7 +258,8 @@ sidebar = html.Div(
 content = html.Div(id="page-content", style=CONTENT_STYLE)
 
 # APP LAYOUT CALL
-app.layout = html.Div([dcc.Location(id="url"), dcc.Store(id='session', storage_type='session'), sidebar, content])
+app.layout = html.Div([dcc.Location(id="url"), dcc.Store(
+    id='session', storage_type='session'), sidebar, content])
 
 # %% FUNCTIONS TO ORDER DATA
 
@@ -380,8 +429,8 @@ def render_page_content(pathname):
             html.P("This application uses 2 datasets, specific information about each dataset is detailed in the following links:"),
             html.Ul([
                 html.Li(html.A("The development dataset",
-                               href='/development-dataset')),
-                html.Li(html.A("Ramen ratings dataset", href='/ramen-ratings'))
+                               href='/dev-development-dataset')),
+                html.Li(html.A("Ramen ratings dataset", href='/ram-ramen-ratings'))
             ]),
             html.P("Feel free to navigate the page and play around with the menus!")
         ])
@@ -713,7 +762,8 @@ def render_page_content(pathname):
             dbc.Jumbotron([
                 html.Label("Categorical column to plot"),
                 dcc.RadioItems(id='boxRamenCat',
-                               options=ramen_agg_options + [{'label':'copy from barplots (stored in dcc.Store)','value':'Copy'}],
+                               options=ramen_agg_options +
+                               [{'label': 'copy from barplots (stored in dcc.Store)', 'value': 'Copy'}],
                                value=np.random.choice(ramen_agg),
                                labelStyle={'display': 'block'}
                                ),
@@ -733,7 +783,7 @@ def render_page_content(pathname):
             ])
         ])
 
-    ## INSTRUCTIONS
+    # INSTRUCTIONS
     elif pathname == '/instructions':
         return html.Div([
             html.H3("Instructions", className="instructions"),
@@ -742,6 +792,9 @@ def render_page_content(pathname):
             ]),
             dbc.Jumbotron([
                 dcc.Markdown(instructionsDev)
+            ]),
+            dbc.Jumbotron([
+                dcc.Markdown(instructionsRam)
             ])
         ])
 
@@ -808,7 +861,7 @@ def update_graph(variableSelectorScatter1, variableSelectorScatter2, variableSel
 # Correlation coefs
 def update_graph(variableSelectorScatter1, variableSelectorScatter2, variableSelectorScatter3):
     data1_2 = corr_table(dev_df, var1=variableSelectorScatter1,
-                      var2=variableSelectorScatter2)
+                         var2=variableSelectorScatter2)
     table1_2 = dash_table.DataTable(
         columns=[{'name': x, 'id': x} for x in data1_2.columns], data=data1_2.to_dict('records'),
         style_cell=TABLE_CELL_STYLE,
@@ -816,39 +869,41 @@ def update_graph(variableSelectorScatter1, variableSelectorScatter2, variableSel
     if variableSelectorScatter3 == 'None':
         # return div with one table
         return html.Div([
-            html.Span("Correlation coefficient computations for the 2 selected variables (variable 1 and 2)", className='corrTablesSpan'),
+            html.Span("Correlation coefficient computations for the 2 selected variables (variable 1 and 2)",
+                      className='corrTablesSpan'),
             table1_2
         ])
     else:
         # var 1 vs var 3
         data1_3 = corr_table(dev_df, var1=variableSelectorScatter1,
-                      var2=variableSelectorScatter3)
+                             var2=variableSelectorScatter3)
         table1_3 = dash_table.DataTable(
-        columns=[{'name': x, 'id': x} for x in data1_3.columns], data=data1_3.to_dict('records'),
-        style_cell=TABLE_CELL_STYLE,
-        style_header=TABLE_HEADER_STYLE)
-        
+            columns=[{'name': x, 'id': x} for x in data1_3.columns], data=data1_3.to_dict('records'),
+            style_cell=TABLE_CELL_STYLE,
+            style_header=TABLE_HEADER_STYLE)
+
         # var 2 vs var 3
         data2_3 = corr_table(dev_df, var1=variableSelectorScatter2,
-                      var2=variableSelectorScatter3)
+                             var2=variableSelectorScatter3)
         table2_3 = dash_table.DataTable(
-        columns=[{'name': x, 'id': x} for x in data2_3.columns], data=data2_3.to_dict('records'),
-        style_cell=TABLE_CELL_STYLE,
-        style_header=TABLE_HEADER_STYLE)
+            columns=[{'name': x, 'id': x} for x in data2_3.columns], data=data2_3.to_dict('records'),
+            style_cell=TABLE_CELL_STYLE,
+            style_header=TABLE_HEADER_STYLE)
 
         # return div with three tables
         return html.Div([
-            html.Span("Correlation coefficient computations for the 2 selected variables (variable 1 and 2)", className='corrTablesSpan'),
+            html.Span("Correlation coefficient computations for the 2 selected variables (variable 1 and 2)",
+                      className='corrTablesSpan'),
             table1_2,
             html.Br(),
-            html.Span("Correlation coefficient computations for variable 1 and variable 3 (dot size)", className='corrTablesSpan'),
+            html.Span("Correlation coefficient computations for variable 1 and variable 3 (dot size)",
+                      className='corrTablesSpan'),
             table1_3,
             html.Br(),
-            html.Span("Correlation coefficient computations for variable 2 and variable 3 (dot size)", className='corrTablesSpan'),
+            html.Span("Correlation coefficient computations for variable 2 and variable 3 (dot size)",
+                      className='corrTablesSpan'),
             table2_3,
         ])
-
-        
 
 
 @app.callback(Output('devTopNOutput', 'figure'),
@@ -932,18 +987,19 @@ def update_plot(catColRamenAgg, funColRamenAgg, barSortingRamen):
                  ascending=barSortingRamen, agg=funColRamenAgg)
     return bar(data, x=catColRamenAgg, y='stars')
 
-@app.callback(Output('session','data'),
-              Input('catColRamenAgg','value'))
+
+@app.callback(Output('session', 'data'),
+              Input('catColRamenAgg', 'value'))
 # Session data stored to obtain data from the state in the boxplot page
 # this saves the value of catColRamenAgg
 def boxRamenCat_value(catColRamenAgg):
-    return {'catColRamenAgg':catColRamenAgg}
+    return {'catColRamenAgg': catColRamenAgg}
 
 
 @app.callback(Output('boxRamen', 'figure'),
               [Input('boxRamenCat', 'value'),
                Input('boxRamenOrient', 'value')],
-               State('session','data'))
+              State('session', 'data'))
 # function for ramen ratings boxplot
 def update_plot(boxRamenCat, boxRamenOrient, catColRamenAgg):
     if boxRamenOrient == 1:
@@ -952,7 +1008,7 @@ def update_plot(boxRamenCat, boxRamenOrient, catColRamenAgg):
         boxRamenOrient = True
     if boxRamenCat == 'Copy':
         boxRamenCat = catColRamenAgg['catColRamenAgg']
-    return box(ramen, x='stars', y=boxRamenCat,horiz=boxRamenOrient, groupvar=boxRamenCat)
+    return box(ramen, x='stars', y=boxRamenCat, horiz=boxRamenOrient, groupvar=boxRamenCat)
 
 
 # %% SERVER

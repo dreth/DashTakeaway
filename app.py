@@ -62,22 +62,23 @@ dev_group_col = 'hdi_cat'
 
 # %% IMPORTING THE RAMEN RATINGS DATA
 # importing data
-ramen = pd.read_csv("https://raw.githubusercontent.com/dreth/DashTakeaway/main/assets/ramen-ratings.csv").iloc[:,1:]
+ramen = pd.read_csv(
+    "https://raw.githubusercontent.com/dreth/DashTakeaway/main/assets/ramen-ratings.csv").iloc[:, 1:]
 
 # ramen ratings numeric cols
 ramen_num = ['stars', 'year', 'top_ten']
 ramen_num_options = [{'label': x, 'value': x}
-                      for x in ramen_num]
+                     for x in ramen_num]
 
 # categorical columns
 ramen_cat = ramen.columns[1:5]
 ramen_cat_options = [{'label': x, 'value': x}
-                      for x in ramen_cat]
+                     for x in ramen_cat]
 
 # aggegation columns
 ramen_agg = ['style', 'country']
 ramen_agg_options = [{'label': x, 'value': x}
-                      for x in ramen_agg]
+                     for x in ramen_agg]
 
 # %% APP LAYOUT
 # Iterative generator of page navlinks for development dataset
@@ -86,8 +87,8 @@ sidebar_tabs_dev = ['Development dataset', 'Histograms',
 
 
 # Iterative generator of page navlinks for ramen ratings dataset
-sidebar_tabs_ram = ['Ramen ratings', 'dataset table', 'Barplots',
-                    'Top 10 with details', 'Regression for Ratings']
+sidebar_tabs_ram = ['Ramen ratings', 'Dataset table', 'Barplots',
+                    'Boxplots']
 
 
 def sidebar_tabs(tabnames, tag, active='exact', external_link=True):
@@ -110,20 +111,30 @@ def sidebar_tabs(tabnames, tag, active='exact', external_link=True):
 # SIDEBAR
 sidebar = html.Div(
     [
-        html.H3("Dash App", className="fs-4", id='sideBarTitle'),
+        html.H3("🧙‍♂️ Dash App", className="fs-4", id='sideBarTitle'),
         html.Hr(),
-        html.H5("The development dataset",
+        html.H5("🌃 The development dataset",
                 className="fs-5 sideBarDatasetTitles"),
         # Navbar with main links
         dbc.Nav(
-            sidebar_tabs(sidebar_tabs_dev,tag='dev'),
+            sidebar_tabs(sidebar_tabs_dev, tag='dev'),
             vertical=True,
             pills=True,
         ),
         html.Hr(),
-        html.H5("Ramen ratings", className="fs-5 sideBarDatasetTitles"),
+        html.H5("🍜 Ramen ratings", className="fs-5 sideBarDatasetTitles"),
         dbc.Nav(
-            sidebar_tabs(sidebar_tabs_ram,tag='ram'),
+            sidebar_tabs(sidebar_tabs_ram, tag='ram'),
+            vertical=True,
+            pills=True,
+        ),
+        html.Hr(),
+        dbc.Nav(
+            html.H5(children=[dbc.NavLink('⭐ Instructions',
+                                          id='instructionsName',
+                                          href='/instructions',
+                                          active='exact',
+                                          external_link=True)]),
             vertical=True,
             pills=True,
         ),
@@ -190,15 +201,29 @@ def sort_var(dataset, var, n=10, bottom_to_top=False):
 def group(dataset, cat, num, ascending=False, agg='mean'):
     # function to obtain aggregate of a categorical variable with an aggfunc
     fun = {
-        'mean':np.mean,
-        'median':np.median,
-        'min':np.min,
-        'max':np.max
+        'mean': np.mean,
+        'median': np.median,
+        'min': np.min,
+        'max': np.max,
+        'count': len,
+        'std': np.std,
+        'var': np.var
     }[agg]
-    agg_df = dataset.groupby([cat]).apply(lambda x: fun(x))[[num]]
-    return agg_df.sort_values(num, ascending=ascending).reset_index()
+    agg_df = dataset[[cat, num]].groupby([cat]).apply(lambda x: fun(x))
+    if agg in ['median', 'count']:
+        return pd.DataFrame(agg_df).rename(columns={0: num}).sort_values(num, ascending=ascending).reset_index()
+    elif agg in ['min', 'max', ]:
+        return pd.DataFrame(agg_df).rename(columns={0: num}).sort_values(num, ascending=ascending)
+    else:
+        return agg_df.sort_values(num, ascending=ascending).reset_index()
+
+
+# agg funcs for selection
+aggfuncs_group = ['mean', 'median', 'min', 'max', 'count', 'std', 'var']
 
 # %% PLOTTING FUNCTIONS
+
+
 def bar(dataset, x, y, groupvar=False):
     # barplot function
     params = {
@@ -274,13 +299,15 @@ def topn(dataset, var, indexer='country_code', n=10,  bottom_to_top=False, group
     return bar(result, indexer, var, groupvar=groupvar)
 
 # %% PAGE CONTENT
+
+
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
 # website content layout and text
 def render_page_content(pathname):
     # HOMEPAGE
     if pathname == '/':
         return dbc.Jumbotron([
-            html.H2("Welcome to our Dash App!", id='mainTitle'),
+            html.H2("👋 Welcome to our Dash App!", id='mainTitle'),
             html.P("The developers of this app are:"),
             html.Ul([
                 html.Li(html.A("Danyu Zhang", href='https://github.com/danyuz')),
@@ -299,8 +326,9 @@ def render_page_content(pathname):
     # development dataset introduction
     elif pathname == "/dev-development-dataset":
         return dbc.Jumbotron([
-            html.H3(
-                "A set of visualizations for different worldwide demographic/development metrics"),
+            html.H3('🌃 The development dataset'),
+            html.P(html.Strong(
+                "A set of visualizations for different worldwide demographic/development metrics")),
             html.P([
                 "Obtained form the ",
                 html.A("World bank Databank",
@@ -403,8 +431,8 @@ def render_page_content(pathname):
     # Boxplot section
     elif pathname == '/dev-boxplots':
         return html.Div([
+            html.H3('Boxplot per variable'),
             dbc.Jumbotron([
-                html.H3('Boxplot per variable'),
                 html.Label('Select variable'),
                 dcc.Dropdown(id='variableSelectorBox',
                              options=dev_val_col_options,
@@ -536,7 +564,7 @@ def render_page_content(pathname):
     # ramen ratings dataset introduction
     elif pathname == "/ram-ramen-ratings":
         return dbc.Jumbotron([
-            html.H3("Ramen Ratings"),
+            html.H3("🍜 Ramen Ratings"),
             html.H5("Context"),
             html.P('The Ramen Rater is a product review website for the hardcore ramen enthusiast (or “ramenphile”), with over 2500 reviews to date. This dataset is an export of “The Big List” (of reviews), converted to a CSV format.'),
             html.H5("Content"),
@@ -558,7 +586,7 @@ def render_page_content(pathname):
                         'How is ramen manufacturing internationally distributed?')
                     ])
         ])
-    
+
     # Raw data table with filters, ramen ratings
     elif pathname == "/ram-dataset-table":
         return html.Div([
@@ -580,28 +608,29 @@ def render_page_content(pathname):
             ]),
             html.Div(id="ramenFullDatasetOutput")
         ])
-    
-    # Raw data table with filters, ramen ratings
+
+    # ramen barplots with different aggregation functions
     elif pathname == "/ram-barplots":
         return html.Div([
-            html.H3("Ramen ratings dataset preview"),
+            html.H3("Barplots for country/style"),
             dbc.Jumbotron([
                 html.Label("Categorical column to aggregate"),
                 dcc.RadioItems(id='catColRamenAgg',
-                              options=ramen_agg_options,
-                              value=np.random.choice(ramen_agg),
-                              labelStyle={'display': 'block'}
-                              ),
+                               options=ramen_agg_options,
+                               value=np.random.choice(ramen_agg),
+                               labelStyle={'display': 'block'}
+                               ),
                 html.Br(),
                 html.Label("Aggregation function"),
                 dcc.Dropdown(id='funColRamenAgg',
                              options=[{'label': x, 'value': x}
-                                     for x in ['mean','median','min','max']],
-                             value=np.random.choice(['mean','median','min','max'])
+                                      for x in aggfuncs_group],
+                             value=np.random.choice(
+                                 aggfuncs_group)
                              ),
                 html.Br(),
-                html.Label("Aggregation function"),
-                dcc.RadioItems(id='sortingTopN',
+                html.Label("Bar sorting"),
+                dcc.RadioItems(id='barSortingRamen',
                                options=[
                                    {'label': 'Descending', 'value': 0},
                                    {'label': 'Ascending', 'value': 1}
@@ -610,9 +639,40 @@ def render_page_content(pathname):
                                labelStyle={'display': 'block'}
                                ),
             ]),
-            dbc.Jumbotron(id="colRamenAgg")
+            dbc.Jumbotron([
+                dcc.Graph(id='colRamenAgg')
+            ])
         ])
-    
+
+    # ramen barplots with different aggregation functions
+    elif pathname == "/ram-boxplots":
+        return html.Div([
+            html.H3("Rating boxplots for country/style"),
+            dbc.Jumbotron([
+                html.Label("Categorical column to plot"),
+                dcc.RadioItems(id='boxRamenCat',
+                               options=ramen_agg_options,
+                               value=np.random.choice(ramen_agg),
+                               labelStyle={'display': 'block'}
+                               ),
+                html.Br(),
+                html.Label("Boxplot orientation"),
+                dcc.RadioItems(id='boxRamenOrient',
+                               options=[
+                                   {'label': 'Horizontal', 'value': 0},
+                                   {'label': 'Vertical', 'value': 1}
+                               ],
+                               value=np.random.choice([0, 1]),
+                               labelStyle={'display': 'block'}
+                               ),
+            ]),
+            dbc.Jumbotron([
+                dcc.Graph(id='boxRamen')
+            ])
+        ])
+
+    # ramen boxplots
+
     # 404 ERROR MESSAGE PAGE
     else:
         return dbc.Jumbotron(
@@ -679,9 +739,13 @@ def update_graph(variableSelectorScatter1, variableSelectorScatter2):
     table = dash_table.DataTable(
         columns=[{'name': x, 'id': x} for x in data.columns], data=data.to_dict('records'),
         style_cell={'color': 'white',
-                    'backgroundColor': 'black'},
+                    'backgroundColor': 'black',
+                    'whiteSpace': 'normal',
+                    'height': 'auto'},
         style_header={'color': 'aquamarine',
-                      'backgroundColor': 'black'})
+                      'backgroundColor': 'black',
+                      'whiteSpace': 'normal',
+                      'height': 'auto'})
     return table
 
 
@@ -731,35 +795,65 @@ def display_table(devScatterOutput, variableSelectorScatter1, variableSelectorSc
     tbl = dash_table.DataTable(columns=cols,
                                data=filtered_df_records,
                                style_cell={'color': 'white',
-                                           'backgroundColor': 'black'},
+                                           'backgroundColor': 'black',
+                                           'height': 'auto',
+                                           'whiteSpace': 'normal'},
                                style_header={'color': 'aquamarine',
+                                             'whiteSpace': 'normal',
+                                             'height': 'auto',
                                              'backgroundColor': 'black'})
     return dbc.Jumbotron([html.Label('Table for data selected in the scatterplot'), tbl])
 
 
 # %% RAMEN RATINGS PLOT CALLBACKS
-@app.callback(Output('ramenFullDatasetOutput','children'),
-              [Input('catVarFilterRamenTbl','value'),
-               Input('numVarFilterRamenTbl','value')])
+@app.callback(Output('ramenFullDatasetOutput', 'children'),
+              [Input('catVarFilterRamenTbl', 'value'),
+               Input('numVarFilterRamenTbl', 'value')])
 # table filter callback
 def update_table(catVarFilterRamenTbl, numVarFilterRamenTbl):
-    data = ramen.loc[:,catVarFilterRamenTbl + numVarFilterRamenTbl].to_dict('records')
-    cols = [{'name':v, 'id':v} for v in catVarFilterRamenTbl] + [{'name':v, 'id':v} for v in numVarFilterRamenTbl]
+    data = ramen.loc[:, catVarFilterRamenTbl +
+                     numVarFilterRamenTbl].to_dict('records')
+    cols = [{'name': v, 'id': v} for v in catVarFilterRamenTbl] + \
+        [{'name': v, 'id': v} for v in numVarFilterRamenTbl]
     tbl = dash_table.DataTable(columns=cols,
-                     data=data,
-                     style_cell={'color': 'white',
-                                'backgroundColor': 'black'},
-                    style_header={'color': 'aquamarine',
-                                'backgroundColor': 'black'})
+                               data=data,
+                               style_cell={'color': 'white',
+                                           'backgroundColor': 'black',
+                                           'whiteSpace': 'normal',
+                                           'height': 'auto'},
+                               style_header={'color': 'aquamarine',
+                                             'backgroundColor': 'black',
+                                             'whiteSpace': 'normal',
+                                             'height': 'auto'})
     return dbc.Jumbotron([tbl])
 
-@app.callback(Output('colRamenAgg','children'),
-              [Input('catColRamenAgg','value'),
-               Input('funColRamenAgg','value')])
+
+@app.callback(Output('colRamenAgg', 'figure'),
+              [Input('catColRamenAgg', 'value'),
+               Input('funColRamenAgg', 'value'),
+               Input('barSortingRamen', 'value')])
 # function for barplot aggregation plot
-def update_plot(catColRamenAgg,funColRamenAgg):
+def update_plot(catColRamenAgg, funColRamenAgg, barSortingRamen):
+    if barSortingRamen == 0:
+        barSortingRamen = False
+    else:
+        barSortingRamen = True
     data = group(ramen, cat=catColRamenAgg, num='stars',
-                 ascending=True)
+                 ascending=barSortingRamen, agg=funColRamenAgg)
+    return bar(data, x=catColRamenAgg, y='stars')
+
+
+@app.callback(Output('boxRamen', 'figure'),
+              [Input('boxRamenCat', 'value'),
+               Input('boxRamenOrient', 'value')])
+# function for ramen ratings boxplot
+def update_plot(boxRamenCat, boxRamenOrient):
+    if boxRamenOrient == 1:
+        boxRamenOrient = False
+    else:
+        boxRamenOrient = True
+    return box(ramen, x='stars', y=boxRamenCat,horiz=boxRamenOrient, groupvar=boxRamenCat)
+
 
 # %% SERVER
 # run server

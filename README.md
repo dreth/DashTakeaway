@@ -1,6 +1,6 @@
 # DashTakeaway
 
-Dash project fro Data Tidying and Reporting
+Dash project for **Data Tidying and Reporting**, done for our master (**Master in Statistics for Data Science**) at **UC3M** during course year **2020-2021**.
 
 ## Group members
 

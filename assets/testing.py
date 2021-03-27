@@ -119,3 +119,14 @@ def corr_matrix_heatmap(dataset):
 def topn(dataset, var, indexer='country_code', n=10,  bottom_to_top=False, groupvar=False):
     result = sort_var(dataset, var, n=n, bottom_to_top=bottom_to_top)
     return bar(result, indexer, var, groupvar=groupvar)
+
+# function to obtain aggregate of a categorical variable with an aggfunc
+def group(dataset, cat, num, ascending=False, agg='mean'):
+    fun = {
+        'mean':np.mean,
+        'median':np.median,
+        'min':np.min,
+        'max':np.max
+    }[agg]
+    agg_df = dataset.groupby([cat]).apply(lambda x: fun(x))[[num]]
+    return agg_df.sort_values(num, ascending=ascending).reset_index()

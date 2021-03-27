@@ -3,8 +3,8 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
-import plotly.express as px
 import pandas as pd
+import plotly.express as px
 import numpy as np
 import dash_table
 from dash.dependencies import Input, Output
@@ -62,7 +62,22 @@ dev_group_col = 'hdi_cat'
 
 # %% IMPORTING THE RAMEN RATINGS DATA
 # importing data
-ramen = pd.read_csv("https://raw.githubusercontent.com/danyuz/FinalShinyAPP/master/ramen-ratings.csv")
+ramen = pd.read_csv("https://raw.githubusercontent.com/dreth/DashTakeaway/main/assets/ramen-ratings.csv").iloc[:,1:]
+
+# ramen ratings numeric cols
+ramen_num = ['stars', 'year', 'top_ten']
+ramen_num_options = [{'label': x, 'value': x}
+                      for x in ramen_num]
+
+# categorical columns
+ramen_cat = ramen.columns[1:5]
+ramen_cat_options = [{'label': x, 'value': x}
+                      for x in ramen_cat]
+
+# aggegation columns
+ramen_agg = ['style', 'country']
+ramen_agg_options = [{'label': x, 'value': x}
+                      for x in ramen_agg]
 
 # %% APP LAYOUT
 # Iterative generator of page navlinks for development dataset
@@ -71,17 +86,17 @@ sidebar_tabs_dev = ['Development dataset', 'Histograms',
 
 
 # Iterative generator of page navlinks for ramen ratings dataset
-sidebar_tabs_ram = ['Ramen ratings', 'dataset table', 'Top 10 by Rating',
+sidebar_tabs_ram = ['Ramen ratings', 'dataset table', 'Barplots',
                     'Top 10 with details', 'Regression for Ratings']
 
 
-def sidebar_tabs(tabnames, active='exact', external_link=True):
+def sidebar_tabs(tabnames, tag, active='exact', external_link=True):
     # function to convert sidebar tab names into sidebar tabs
     navlinks = [0 for x in tabnames]
     for i in range(len(tabnames)):
         # params
         tabname = tabnames[i]
-        href_add = f"/{tabname.lower().replace(' ','-')}"
+        href_add = f"/{tag}-{tabname.lower().replace(' ','-')}"
 
         # generating the list of navlinks
         navlink = dbc.NavLink(tabname.lower(),
@@ -101,14 +116,14 @@ sidebar = html.Div(
                 className="fs-5 sideBarDatasetTitles"),
         # Navbar with main links
         dbc.Nav(
-            sidebar_tabs(sidebar_tabs_dev),
+            sidebar_tabs(sidebar_tabs_dev,tag='dev'),
             vertical=True,
             pills=True,
         ),
         html.Hr(),
         html.H5("Ramen ratings", className="fs-5 sideBarDatasetTitles"),
         dbc.Nav(
-            sidebar_tabs(sidebar_tabs_ram),
+            sidebar_tabs(sidebar_tabs_ram,tag='ram'),
             vertical=True,
             pills=True,
         ),
@@ -122,7 +137,7 @@ content = html.Div(id="page-content", style=CONTENT_STYLE)
 # APP LAYOUT CALL
 app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
 
-# %% FUNCTIONS TO PLOT AND ORDER DATA
+# %% FUNCTIONS TO ORDER DATA
 
 
 def corr_table(dataset, var1, var2):
@@ -171,9 +186,19 @@ def sort_var(dataset, var, n=10, bottom_to_top=False):
     result = result.iloc[1:n, :]
     return result.reset_index(drop=True)
 
-# PLOTTING FUNCTIONS
 
+def group(dataset, cat, num, ascending=False, agg='mean'):
+    # function to obtain aggregate of a categorical variable with an aggfunc
+    fun = {
+        'mean':np.mean,
+        'median':np.median,
+        'min':np.min,
+        'max':np.max
+    }[agg]
+    agg_df = dataset.groupby([cat]).apply(lambda x: fun(x))[[num]]
+    return agg_df.sort_values(num, ascending=ascending).reset_index()
 
+# %% PLOTTING FUNCTIONS
 def bar(dataset, x, y, groupvar=False):
     # barplot function
     params = {
@@ -272,7 +297,7 @@ def render_page_content(pathname):
 
     ## DEVELOPMENT DATASET PAGES ##
     # development dataset introduction
-    elif pathname == "/development-dataset":
+    elif pathname == "/dev-development-dataset":
         return dbc.Jumbotron([
             html.H3(
                 "A set of visualizations for different worldwide demographic/development metrics"),
@@ -350,7 +375,7 @@ def render_page_content(pathname):
         ])
 
     # Histogram section
-    elif pathname == '/histograms':
+    elif pathname == '/dev-histograms':
         return html.Div([
             html.H3('Histograms per variable'),
             dbc.Jumbotron([
@@ -376,7 +401,7 @@ def render_page_content(pathname):
         ])
 
     # Boxplot section
-    elif pathname == '/boxplots':
+    elif pathname == '/dev-boxplots':
         return html.Div([
             dbc.Jumbotron([
                 html.H3('Boxplot per variable'),
@@ -402,7 +427,7 @@ def render_page_content(pathname):
         ])
 
     # Correlation section
-    elif pathname == '/correlation':
+    elif pathname == '/dev-correlation':
         return html.Div([
             html.H4('Scatter plot + Correlation between variables'),
             dbc.Jumbotron([
@@ -454,7 +479,7 @@ def render_page_content(pathname):
         ])
 
     # top n countries section
-    elif pathname == '/top-n-countries':
+    elif pathname == '/dev-top-n-countries':
         return html.Div([
             html.H4('Visualizing top N countries per variable'),
             dbc.Jumbotron([
@@ -509,7 +534,7 @@ def render_page_content(pathname):
 
     # RAMEN DATASET PAGES
     # ramen ratings dataset introduction
-    elif pathname == "/ramen-ratings":
+    elif pathname == "/ram-ramen-ratings":
         return dbc.Jumbotron([
             html.H3("Ramen Ratings"),
             html.H5("Context"),
@@ -534,9 +559,60 @@ def render_page_content(pathname):
                     ])
         ])
     
-    # Raw data table, ramen ratings
-
-
+    # Raw data table with filters, ramen ratings
+    elif pathname == "/ram-dataset-table":
+        return html.Div([
+            html.H3("Ramen ratings dataset preview"),
+            dbc.Jumbotron([
+                html.Label("Categorical columns to show"),
+                dcc.Dropdown(id='catVarFilterRamenTbl',
+                             options=ramen_cat_options,
+                             value=ramen_cat,
+                             multi=True
+                             ),
+                html.Br(),
+                html.Label("Numerical columns to show"),
+                dcc.Dropdown(id='numVarFilterRamenTbl',
+                             options=ramen_num_options,
+                             value=ramen_num,
+                             multi=True
+                             ),
+            ]),
+            html.Div(id="ramenFullDatasetOutput")
+        ])
+    
+    # Raw data table with filters, ramen ratings
+    elif pathname == "/ram-barplots":
+        return html.Div([
+            html.H3("Ramen ratings dataset preview"),
+            dbc.Jumbotron([
+                html.Label("Categorical column to aggregate"),
+                dcc.RadioItems(id='catColRamenAgg',
+                              options=ramen_agg_options,
+                              value=np.random.choice(ramen_agg),
+                              labelStyle={'display': 'block'}
+                              ),
+                html.Br(),
+                html.Label("Aggregation function"),
+                dcc.Dropdown(id='funColRamenAgg',
+                             options=[{'label': x, 'value': x}
+                                     for x in ['mean','median','min','max']],
+                             value=np.random.choice(['mean','median','min','max'])
+                             ),
+                html.Br(),
+                html.Label("Aggregation function"),
+                dcc.RadioItems(id='sortingTopN',
+                               options=[
+                                   {'label': 'Descending', 'value': 0},
+                                   {'label': 'Ascending', 'value': 1}
+                               ],
+                               value=0,
+                               labelStyle={'display': 'block'}
+                               ),
+            ]),
+            dbc.Jumbotron(id="colRamenAgg")
+        ])
+    
     # 404 ERROR MESSAGE PAGE
     else:
         return dbc.Jumbotron(
@@ -662,8 +738,30 @@ def display_table(devScatterOutput, variableSelectorScatter1, variableSelectorSc
 
 
 # %% RAMEN RATINGS PLOT CALLBACKS
+@app.callback(Output('ramenFullDatasetOutput','children'),
+              [Input('catVarFilterRamenTbl','value'),
+               Input('numVarFilterRamenTbl','value')])
+# table filter callback
+def update_table(catVarFilterRamenTbl, numVarFilterRamenTbl):
+    data = ramen.loc[:,catVarFilterRamenTbl + numVarFilterRamenTbl].to_dict('records')
+    cols = [{'name':v, 'id':v} for v in catVarFilterRamenTbl] + [{'name':v, 'id':v} for v in numVarFilterRamenTbl]
+    tbl = dash_table.DataTable(columns=cols,
+                     data=data,
+                     style_cell={'color': 'white',
+                                'backgroundColor': 'black'},
+                    style_header={'color': 'aquamarine',
+                                'backgroundColor': 'black'})
+    return dbc.Jumbotron([tbl])
+
+@app.callback(Output('colRamenAgg','children'),
+              [Input('catColRamenAgg','value'),
+               Input('funColRamenAgg','value')])
+# function for barplot aggregation plot
+def update_plot(catColRamenAgg,funColRamenAgg):
+    data = group(ramen, cat=catColRamenAgg, num='stars',
+                 ascending=True)
 
 # %% SERVER
 # run server
 if __name__ == "__main__":
-    app.run_server(port=5665, debug=True)
+    app.run_server(port=5667, debug=True)

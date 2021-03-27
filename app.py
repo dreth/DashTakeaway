@@ -71,7 +71,7 @@ sidebar_tabs_dev = ['Development dataset', 'Histograms',
 
 
 # Iterative generator of page navlinks for ramen ratings dataset
-sidebar_tabs_ram = ['Ramen ratings', 'Top 10 by Rating',
+sidebar_tabs_ram = ['Ramen ratings', 'dataset table', 'Top 10 by Rating',
                     'Top 10 with details', 'Regression for Ratings']
 
 
@@ -510,17 +510,17 @@ def render_page_content(pathname):
     # RAMEN DATASET PAGES
     # ramen ratings dataset introduction
     elif pathname == "/ramen-ratings":
-        return dcc.Jumbotron([
+        return dbc.Jumbotron([
             html.H3("Ramen Ratings"),
             html.H5("Context"),
             html.P('The Ramen Rater is a product review website for the hardcore ramen enthusiast (or “ramenphile”), with over 2500 reviews to date. This dataset is an export of “The Big List” (of reviews), converted to a CSV format.'),
             html.H5("Content"),
             html.P(["Each record in the dataset is a single ramen product review. Review numbers are contiguous: more recently reviewed ramen varieties have higher numbers. Brand, Variety (the product name), Country, and Style (Cup? Bowl? Tray?) are pretty self-explanatory. Stars indicate the ramen quality, as assessed by the reviewer, on a 5-point scale; this is the most important column in the dataset!",
                     "Note that this dataset does not include the text of the reviews themselves. For that, you should browse through ",
-                    html.A("link", href="https://www.theramenrater.com/"), "instead!"
+                    html.A("link", href="https://www.theramenrater.com/"), " instead!"
                     ]),
             html.H5("Acknowledgements"),
-            html.P(["This dataset is republished as-is from the original BIG LIST on",
+            html.P(["This dataset is republished as-is from the original BIG LIST on ",
                     html.A("link.", href="https://www.theramenrater.com/")
                     ]),
             html.H5("Inspiration"),

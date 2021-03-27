@@ -192,7 +192,7 @@ ramen_agg_options = [{'label': x, 'value': x}
 
 # %% APP LAYOUT
 # Iterative generator of page navlinks for development dataset
-sidebar_tabs_dev = ['development dataset','histograms',
+sidebar_tabs_dev = ['development dataset', 'histograms',
                     'Boxplots', 'correlation', 'Top N countries']
 
 
@@ -430,7 +430,8 @@ def render_page_content(pathname):
             html.Ul([
                 html.Li(html.A("The development dataset",
                                href='/dev-development-dataset')),
-                html.Li(html.A("Ramen ratings dataset", href='/ram-ramen-ratings'))
+                html.Li(html.A("Ramen ratings dataset",
+                               href='/ram-ramen-ratings'))
             ]),
             html.P("Feel free to navigate the page and play around with the menus!")
         ])

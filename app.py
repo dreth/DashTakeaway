@@ -7,7 +7,7 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 import dash_table
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import json
 
 # Bootstrap stylesheet
@@ -17,6 +17,53 @@ external_stylesheets = [
 # Dash app initialization
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets,
                 title="dan+dandan's Dash App")
+
+# %% INSTRUCTIONS
+
+# instructions introduction
+instructionsIntro = """
+##### **Hello and welcome to Danyu and Daniel's Dash App instructions!**
+
+Here we will lay out the instructions, utilities and options the app offers.
+"""
+
+# instructions for development dataset section
+instructionsDev = """
+##### Section 1: The development dataset
+
+###### Layout and options
+
+- **development dataset**: introduction page for the dataset including source and variable description
+
+
+
+- **histograms**: section where histograms are plotted for each variable in the dataset
+    - **Options**:
+        - Variable selection to plot a variable from the dataset
+        - Option to group by HDI category or not\
+
+
+
+- **boxplots**: section where boxplots are plotted for each variable in the dataset
+    - **Options**:
+        - Variable selection to plot a variable from the dataset
+        - Option to group by HDI category or not\
+
+
+
+- **correlation**:
+    - **Options**:
+        - Select first variable to plot against variable 2
+        - Select second variable to plot against variable 1
+        - Select variable to plot against variable 1 and 2 in a third dimension (dot size)
+        - Select variable to identify dots (this variable is included in the hover data over the dots within the scatterplot, this is also displayed when doing data selection over the plot)
+        - HDI grouping (allows to plot the variable with dots coloured by their respective HDI category)
+    - **Tables**:
+        - Correlation table which displays the given correlation between variable 1 and variable 2, it's shown using 3 different correlation coefficients
+        - *The second table is hidden until the user selects data within the plot*, this table shows the underlying data used to plot the scatterplot with the identifier selected in the 4th dropdown menu (variable to identify dots).
+
+
+"""
 
 # %% LAYOUT STYLES
 
@@ -38,6 +85,22 @@ CONTENT_STYLE = {
     "margin-left": "18rem",
     "margin-right": "2rem",
     "padding": "2rem 1rem"
+}
+
+# table style for cells
+TABLE_CELL_STYLE = {
+    'color': 'white',
+    'backgroundColor': 'black',
+    'whiteSpace': 'normal',
+    'height': 'auto'
+}
+
+# table style for headers
+TABLE_HEADER_STYLE = {
+    'color': 'aquamarine',
+    'backgroundColor': 'black',
+    'whiteSpace': 'normal',
+    'height': 'auto'
 }
 
 # %% IMPORTING THE DEVELOPMENT DATA
@@ -134,7 +197,8 @@ sidebar = html.Div(
                                           id='instructionsName',
                                           href='/instructions',
                                           active='exact',
-                                          external_link=True)]),
+                                          external_link=True,
+                                          className="instructions")]),
             vertical=True,
             pills=True,
         ),
@@ -146,7 +210,7 @@ sidebar = html.Div(
 content = html.Div(id="page-content", style=CONTENT_STYLE)
 
 # APP LAYOUT CALL
-app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
+app.layout = html.Div([dcc.Location(id="url"), dcc.Store(id='session', storage_type='session'), sidebar, content])
 
 # %% FUNCTIONS TO ORDER DATA
 
@@ -495,8 +559,6 @@ def render_page_content(pathname):
                                )
             ]),
             dbc.Jumbotron([
-                html.Label(
-                    'Correlation coefficient computations for the 2 selected variables'),
                 html.Div(id='correlDataTable')
             ]),
             dbc.Jumbotron([
@@ -644,14 +706,14 @@ def render_page_content(pathname):
             ])
         ])
 
-    # ramen barplots with different aggregation functions
+    # ramen boxplots (Store is used here with State)
     elif pathname == "/ram-boxplots":
         return html.Div([
             html.H3("Rating boxplots for country/style"),
             dbc.Jumbotron([
                 html.Label("Categorical column to plot"),
                 dcc.RadioItems(id='boxRamenCat',
-                               options=ramen_agg_options,
+                               options=ramen_agg_options + [{'label':'copy from barplots (stored in dcc.Store)','value':'Copy'}],
                                value=np.random.choice(ramen_agg),
                                labelStyle={'display': 'block'}
                                ),
@@ -671,7 +733,17 @@ def render_page_content(pathname):
             ])
         ])
 
-    # ramen boxplots
+    ## INSTRUCTIONS
+    elif pathname == '/instructions':
+        return html.Div([
+            html.H3("Instructions", className="instructions"),
+            dbc.Jumbotron([
+                dcc.Markdown(instructionsIntro)
+            ]),
+            dbc.Jumbotron([
+                dcc.Markdown(instructionsDev)
+            ])
+        ])
 
     # 404 ERROR MESSAGE PAGE
     else:
@@ -731,22 +803,52 @@ def update_graph(variableSelectorScatter1, variableSelectorScatter2, variableSel
 
 @app.callback(Output('correlDataTable', 'children'),
               [Input('variableSelectorScatter1', 'value'),
-               Input('variableSelectorScatter2', 'value')])
+               Input('variableSelectorScatter2', 'value'),
+               Input('variableSelectorScatter3', 'value')])
 # Correlation coefs
-def update_graph(variableSelectorScatter1, variableSelectorScatter2):
-    data = corr_table(dev_df, var1=variableSelectorScatter1,
+def update_graph(variableSelectorScatter1, variableSelectorScatter2, variableSelectorScatter3):
+    data1_2 = corr_table(dev_df, var1=variableSelectorScatter1,
                       var2=variableSelectorScatter2)
-    table = dash_table.DataTable(
-        columns=[{'name': x, 'id': x} for x in data.columns], data=data.to_dict('records'),
-        style_cell={'color': 'white',
-                    'backgroundColor': 'black',
-                    'whiteSpace': 'normal',
-                    'height': 'auto'},
-        style_header={'color': 'aquamarine',
-                      'backgroundColor': 'black',
-                      'whiteSpace': 'normal',
-                      'height': 'auto'})
-    return table
+    table1_2 = dash_table.DataTable(
+        columns=[{'name': x, 'id': x} for x in data1_2.columns], data=data1_2.to_dict('records'),
+        style_cell=TABLE_CELL_STYLE,
+        style_header=TABLE_HEADER_STYLE)
+    if variableSelectorScatter3 == 'None':
+        # return div with one table
+        return html.Div([
+            html.Span("Correlation coefficient computations for the 2 selected variables (variable 1 and 2)", className='corrTablesSpan'),
+            table1_2
+        ])
+    else:
+        # var 1 vs var 3
+        data1_3 = corr_table(dev_df, var1=variableSelectorScatter1,
+                      var2=variableSelectorScatter3)
+        table1_3 = dash_table.DataTable(
+        columns=[{'name': x, 'id': x} for x in data1_3.columns], data=data1_3.to_dict('records'),
+        style_cell=TABLE_CELL_STYLE,
+        style_header=TABLE_HEADER_STYLE)
+        
+        # var 2 vs var 3
+        data2_3 = corr_table(dev_df, var1=variableSelectorScatter2,
+                      var2=variableSelectorScatter3)
+        table2_3 = dash_table.DataTable(
+        columns=[{'name': x, 'id': x} for x in data2_3.columns], data=data2_3.to_dict('records'),
+        style_cell=TABLE_CELL_STYLE,
+        style_header=TABLE_HEADER_STYLE)
+
+        # return div with three tables
+        return html.Div([
+            html.Span("Correlation coefficient computations for the 2 selected variables (variable 1 and 2)", className='corrTablesSpan'),
+            table1_2,
+            html.Br(),
+            html.Span("Correlation coefficient computations for variable 1 and variable 3 (dot size)", className='corrTablesSpan'),
+            table1_3,
+            html.Br(),
+            html.Span("Correlation coefficient computations for variable 2 and variable 3 (dot size)", className='corrTablesSpan'),
+            table2_3,
+        ])
+
+        
 
 
 @app.callback(Output('devTopNOutput', 'figure'),
@@ -794,14 +896,8 @@ def display_table(devScatterOutput, variableSelectorScatter1, variableSelectorSc
     # table with data filtered
     tbl = dash_table.DataTable(columns=cols,
                                data=filtered_df_records,
-                               style_cell={'color': 'white',
-                                           'backgroundColor': 'black',
-                                           'height': 'auto',
-                                           'whiteSpace': 'normal'},
-                               style_header={'color': 'aquamarine',
-                                             'whiteSpace': 'normal',
-                                             'height': 'auto',
-                                             'backgroundColor': 'black'})
+                               style_cell=TABLE_CELL_STYLE,
+                               style_header=TABLE_HEADER_STYLE)
     return dbc.Jumbotron([html.Label('Table for data selected in the scatterplot'), tbl])
 
 
@@ -817,14 +913,8 @@ def update_table(catVarFilterRamenTbl, numVarFilterRamenTbl):
         [{'name': v, 'id': v} for v in numVarFilterRamenTbl]
     tbl = dash_table.DataTable(columns=cols,
                                data=data,
-                               style_cell={'color': 'white',
-                                           'backgroundColor': 'black',
-                                           'whiteSpace': 'normal',
-                                           'height': 'auto'},
-                               style_header={'color': 'aquamarine',
-                                             'backgroundColor': 'black',
-                                             'whiteSpace': 'normal',
-                                             'height': 'auto'})
+                               style_cell=TABLE_CELL_STYLE,
+                               style_header=TABLE_HEADER_STYLE)
     return dbc.Jumbotron([tbl])
 
 
@@ -842,16 +932,26 @@ def update_plot(catColRamenAgg, funColRamenAgg, barSortingRamen):
                  ascending=barSortingRamen, agg=funColRamenAgg)
     return bar(data, x=catColRamenAgg, y='stars')
 
+@app.callback(Output('session','data'),
+              Input('catColRamenAgg','value'))
+# Session data stored to obtain data from the state in the boxplot page
+# this saves the value of catColRamenAgg
+def boxRamenCat_value(catColRamenAgg):
+    return {'catColRamenAgg':catColRamenAgg}
+
 
 @app.callback(Output('boxRamen', 'figure'),
               [Input('boxRamenCat', 'value'),
-               Input('boxRamenOrient', 'value')])
+               Input('boxRamenOrient', 'value')],
+               State('session','data'))
 # function for ramen ratings boxplot
-def update_plot(boxRamenCat, boxRamenOrient):
+def update_plot(boxRamenCat, boxRamenOrient, catColRamenAgg):
     if boxRamenOrient == 1:
         boxRamenOrient = False
     else:
         boxRamenOrient = True
+    if boxRamenCat == 'Copy':
+        boxRamenCat = catColRamenAgg['catColRamenAgg']
     return box(ramen, x='stars', y=boxRamenCat,horiz=boxRamenOrient, groupvar=boxRamenCat)
 
 

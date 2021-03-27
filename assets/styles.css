@@ -18,6 +18,11 @@ hr {
     font-weight: bold;
 }
 
-#instructionsName {
+.instructions {
     color: rgb(252, 249, 99);
+}
+
+.corrTablesSpan {
+    font-weight: bold;
+    font-size: medium;
 }

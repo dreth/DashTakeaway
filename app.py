@@ -8,7 +8,6 @@ import plotly.express as px
 import numpy as np
 import dash_table
 from dash.dependencies import Input, Output, State
-import json
 
 # Bootstrap stylesheet
 external_stylesheets = [
@@ -942,7 +941,7 @@ def display_table(devScatterOutput, variableSelectorScatter1, variableSelectorSc
         {'name': variableSelectorScatter2, 'id': variableSelectorScatter2}
     ]
     if variableSelectorScatter3 != 'None':
-        cols.update({'name': variableSelectorScatter3,
+        cols.append({'name': variableSelectorScatter3,
                      'id': variableSelectorScatter3})
     # finding out which countries are selected to filter
     countries = [o['customdata'][0] for o in devScatterOutput['points']]

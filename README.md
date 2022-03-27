@@ -1,4 +1,4 @@
-# DashTakeaway
+# Simple web app using Dash
 
 Dash project for **Data Tidying and Reporting**, done for our master (**Master in Statistics for Data Science**) at **UC3M** during course year **2020-2021**.
 
